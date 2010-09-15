@@ -1,0 +1,11 @@
+First, create the word-count-example database, including views and documents
+
+  $ ruby insert.rb
+
+Then, run the queries:
+
+  $ ruby query.rb
+
+If you have time for a sophisticated example, try the Markov chain demo script:
+
+  $ ruby markov.rb

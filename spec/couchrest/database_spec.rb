@@ -820,7 +820,7 @@ describe CouchRest::Database do
 
       it "contains documents saved after replication initiated" do
         @db.save_doc({'_id' => 'test_doc_after', 'some-value' => 'bar'})
-        sleep(1.5) # Allow some time to replicate
+        sleep(2.5) # Allow some time to replicate
         doc = @other_db.get('test_doc_after')
         doc['some-value'].should == 'bar'
       end

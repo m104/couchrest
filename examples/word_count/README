@@ -1,11 +1,5 @@
-First, download the sample text files:
-  $ ruby word_count.rb
+First, create the word-count-example database, including views and documents
+  $ ruby word_count_insert.rb
 
-Then, create the word count view:
-  $ ruby word_count_views.rb
-
-(the indexing with take a few minutes, so be patient!)
-
-Finally, run the queries:
+Then, run the queries:
   $ ruby word_count_query.rb
-

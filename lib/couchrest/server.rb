@@ -64,6 +64,11 @@ module CouchRest
       CouchRest.get "#{@uri}/"
     end
 
+    # GET the welcome message
+    def active_tasks
+      CouchRest.get "#{@uri}/_active_tasks"
+    end
+
     # Create a database
     def create_db(name)
       CouchRest.put "#{@uri}/#{name}"

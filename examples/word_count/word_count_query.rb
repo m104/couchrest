@@ -1,11 +1,8 @@
 #!/usr/bin/env ruby
 
 # ensure that we're loading *this* version of couchrest, wherever we are
-LIB_PATH = File.dirname('../../lib/couchrest')
-$:.unshift LIB_PATH unless
- $:.include?(LIB_PATH) or
- $:.include?(File.expand_path(LIB_PATH))
- 
+$:.unshift File.join(File.dirname(__FILE__), '..', '..','lib')
+
 require 'couchrest'
 
 couch = CouchRest.new("http://127.0.0.1:5984")

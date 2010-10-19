@@ -1,18 +1,23 @@
 #!/usr/bin/env ruby
 
-require File.expand_path(File.dirname(__FILE__)) + '/../../couchrest'
+# ensure that we're loading *this* version of couchrest, wherever we are
+$:.unshift File.join(File.dirname(__FILE__), '..', '..','lib')
+require 'couchrest'
 
 cr = CouchRest.new("http://127.0.0.1:5984")
 @db = cr.database('word-count-example')
 @word_memoizer = {}
 
 def probable_follower_for(word)
-  @word_memoizer[word] ||= @db.view('markov/chain-reduce', :startkey => [word,nil], :endkey => [word,{}],:group_level => 2)
-  
+  @word_memoizer[word] ||= @db.view('markov/chain-reduce',
+                                    :startkey => [word,nil],
+                                    :endkey => [word,{}],
+                                    :group_level => 2)
+
   # puts
   # puts "search #{word} #{wprobs[word]['rows'].length}"
   # @word_memoizer[word]['rows'].sort_by{|r|r['value']}.each{|r|puts [r['value'],r['key']].inspect}
-  
+
   rows = @word_memoizer[word]['rows'].select{|r|(r['key'][1]!='')}.sort_by{|r|r['value']}
   row = rows[(-1*[rows.length,5].min)..-1].sort_by{rand}[0]
   row ? row['key'][1] : nil

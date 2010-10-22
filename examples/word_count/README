@@ -1,5 +1,12 @@
 First, create the word-count-example database, including views and documents
-  $ ruby word_count_insert.rb
+
+  $ ruby insert.rb
 
 Then, run the queries:
-  $ ruby word_count_query.rb
+
+  $ ruby query.rb
+
+If you have time for a sophisticated example, try the Markov Chain demo script
+(where $WORD is a standard English word that may appear in the documents):
+
+  $ ruby markov.rb $WORD

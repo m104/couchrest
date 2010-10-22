@@ -24,8 +24,11 @@ describe CouchRest do
       @cr.info["couchdb"].should == "Welcome"
       @cr.info.class.should == Hash   
     end
+    it "should list no active tasks" do
+      @cr.active_tasks.should == []
+    end
   end
-  
+
   it "should restart" do
     @cr.restart!
     begin

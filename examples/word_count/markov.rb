@@ -29,11 +29,11 @@ rescue RestClient::ResourceNotFound => e
       'chain-reduce' => {
         :map => 'function(doc) {
             var words = doc.text.split(/[^a-z\'.,]+/i).filter(function(w) {
-              return w.length > 0;
+              return w.match(/[a-z]+/i);
             });
 
             for (var i = 0, l = words.length; i < l; i++) {
-              chain = words.slice(i, i + 4);
+              chain = words.slice(i, i + 9);
               if (chain.length > 2) {
                 emit(chain, doc.title);
               }
@@ -82,57 +82,65 @@ while task
 end
 
 puts "Welcome to the Classics Sentence Finisher!"
-puts "Start a sentence, hit ENTER, and watch this script try to finish it"
-puts "with words from the masters."
 puts ""
+puts "Start a sentence, hit ENTER, and watch this script try to finish it"
+puts "with words and phrases from classic works of literature."
 
-print ": "
+rng = Random.new
 
-while sentence = STDIN.gets
-  words = sentence.strip.split(/\s+/)
-  break if words.empty?
+while true
+  # get the user's sentence-starting phrase
+  puts ''
+  print ': '
+  phrase = STDIN.gets
 
-  print "> " + words.join(' ') + ' '
+  queued = (phrase || '').strip.split(/\s+/)
+  break if queued.empty?
 
-  last_word = ''
-  word = words.last
+  print '>'
+  words = []
 
-  while word and (word != last_word) and (word !~ /[.!?]$/)
-    print word + ' ' unless last_word == ''
-    
-    last_word = word
+  while word = queued.shift
+    print ' ' + word
+    words << word
+    break if word =~ /[.?!]+$/
+    next unless queued.empty?
 
     # one or two-word chain basis
-    tail = [words.last]
-    tail.unshift(words[-2]) if words.size > 1
-    tail.unshift(words[-3]) if words.size > 2
+    tail = []
+    tail << words[-2] if words.size > 1
+    tail << words.last
+    arity = tail.size
 
     params = {
       :startkey => tail + [nil],
       :endkey => tail + [{}],
-      :group_level => tail.size + 1
+      :group_level => rng.rand(7) + arity + 1
     }
 
+    # fetch the view
     results = db.view('markov/chain-reduce', params)
 
-    rows = results['rows'].select{|r|(r['key'][1]!='')}.sort_by{|r|r['value']}
-    row = rows[(-1*[rows.length,5].min)..-1].sort_by{rand}[0]
-    word = row ? row['key'][tail.size] : nil
+    # select the result set (row)
+    rows = results['rows'].select{ |r| r['key'][arity] != '' }
 
-    words << word
+    queued = []
+    if rows.size > 0
+      index = 0
+      index = rng.rand(rows.size - 1) if rows.size > 1
+      queued = rows[index]['key'][arity..-1]
+    end
   end
   
-  puts ""
-  puts ""
-  puts "That was great!  Have another go?"
-  puts ""
-  print ": "
-  
+  print '.' unless words.last =~ /[.?!]+$/
+  puts ''
+  puts ''
+  puts 'That was great!  Have another go?'
 end
 
-puts ""
+puts ''
 puts "OK, we're done!"
-puts ""
+puts ''
 exit
 
 

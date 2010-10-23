@@ -16,10 +16,14 @@ puts "Preparing the source material..."
 puts "(each paragraph of 4+ lines forms its own document in the database)"
 
 books = {
+  'sherlock-holmes.txt' => 'http://www.gutenberg.org/cache/epub/1661/pg1661.txt',
+  'pride-and-prejudice.txt' => 'http://www.gutenberg.org/cache/epub/1342/pg1342.txt',
+  'huckleberry-finn.txt' => 'http://www.gutenberg.org/cache/epub/76/pg76.txt',
+  'tale-of-two-cities.txt' => 'http://www.gutenberg.org/cache/epub/98/pg98.txt'
   #'ulysses.txt' => 'http://www.gutenberg.org/files/4300/4300.txt',
   #'outline-of-science.txt' => 'http://www.gutenberg.org/files/20417/20417.txt',
   #'america.txt' => 'http://www.gutenberg.org/files/16960/16960.txt',
-  'da-vinci.txt' => 'http://www.gutenberg.org/dirs/etext04/7ldv110.txt'
+  #'da-vinci.txt' => 'http://www.gutenberg.org/dirs/etext04/7ldv110.txt'
 }
 
 books.each do |file, url|

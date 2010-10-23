@@ -6,7 +6,6 @@ Then, run the queries:
 
   $ ruby query.rb
 
-If you have time for a sophisticated example, try the Markov Chain demo script
-(where $WORD is a standard English word that may appear in the documents):
+If you have time for a sophisticated example, try the Markov chain demo script:
 
-  $ ruby markov.rb $WORD
+  $ ruby markov.rb

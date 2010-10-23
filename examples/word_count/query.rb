@@ -107,7 +107,7 @@ We can also count words on a per-title basis.
 
 eos
 
-title = 'da-vinci'
+title = 'sherlock-holmes'
 params = {
   :key => [word, title]
   }

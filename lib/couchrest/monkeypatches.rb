@@ -7,10 +7,12 @@ class Time
   # Note this this format stores all dates in UTC so that collation 
   # order is preserved. (There's no longer a need to set <tt>ENV['TZ'] = 'UTC'</tt>
   # in your application.)
-
-  def to_json(options = nil)
-    u = self.getutc
-    %("#{u.strftime("%Y/%m/%d %H:%M:%S +0000")}")
+  def as_json(options = nil)
+    utc.strftime('%Y/%m/%d %H:%M:%S +0000"')
+  end
+  
+  def to_json(*options)
+    '"' + as_json + '"'
   end
 
 end

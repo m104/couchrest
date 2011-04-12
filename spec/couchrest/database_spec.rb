@@ -17,6 +17,12 @@ describe CouchRest::Database do
     end
   end
 
+  describe "#info" do
+    it "should request basic database data" do
+      @db.info['db_name'].should eql(TESTDB)
+    end
+  end
+
   describe "map query with _temp_view in Javascript" do
     before(:each) do
       @db.bulk_save([
@@ -145,6 +151,42 @@ describe CouchRest::Database do
         rows << row
       end
       rows.length.should == 2
+    end
+    it "should accept a payload" do
+      rs = @db.view('first/test', {}, :keys => ["another", "wild"])
+      rs['rows'].length.should == 2
+    end
+    it "should accept a payload with block" do
+      rows = []
+      rs = @db.view('first/test', {:include_docs => true}, :keys => ["another", "wild"]) do |row|
+        rows << row
+      end
+      rows.length.should == 2
+      rows.first['doc']['another'].should_not be_empty
+    end
+  end
+
+  describe "#changes" do
+    # uses standard view method, so not much testing required
+    before(:each) do
+      [ 
+        {"wild" => "and random"},
+        {"mild" => "yet local"},
+        {"another" => ["set","of","keys"]}
+      ].each do |d|
+        @db.save_doc(d)
+      end
+    end
+
+    it "should produce a basic list of changes" do
+      c = @db.changes
+      c['results'].length.should eql(3)
+    end
+
+    it "should provide id of last document" do
+      c = @db.changes
+      doc = @db.get(c['results'].last['id'])
+      doc['another'].should_not be_empty
     end
   end
 
@@ -561,7 +603,6 @@ describe CouchRest::Database do
     it "should work under normal conditions" do
       @db.update_doc @id do |doc|
         doc['upvotes'] += 1
-        doc
       end
       @db.get(@id)['upvotes'].should == 11
     end
@@ -572,10 +613,9 @@ describe CouchRest::Database do
           conflicting_doc = @db.get @id
           conflicting_doc['upvotes'] += 1
           @db.save_doc conflicting_doc
-        
+
           # then try saving it through the update
           doc['upvotes'] += 1
-          doc
         end
       end.should raise_error(RestClient::RequestFailed)
     end
@@ -647,6 +687,7 @@ describe CouchRest::Database do
     ds['total_rows'].should == 5
   end
   
+  # This is redundant with the latest view code, but left in place for prosterity.
   describe "documents / _all_docs" do
     before(:each) do
       9.times do |i|
@@ -681,12 +722,11 @@ describe CouchRest::Database do
   end
   
 
-  describe "compacting a database" do
+  describe "#compact" do
     it "should compact the database" do
       db = @cr.database('couchrest-test')
-      # r = 
-      db.compact!
-      # r['ok'].should == true
+      r = db.compact!
+      r['ok'].should == true
     end
   end
 
@@ -696,9 +736,8 @@ describe CouchRest::Database do
     end
     it "should delete the database" do
       db = @cr.database('couchrest-test')
-      # r = 
-      db.delete!
-      # r['ok'].should == true
+      r = db.delete!
+      r['ok'].should == true
       @cr.databases.should_not include('couchrest-test')
     end
   end
@@ -732,6 +771,20 @@ describe CouchRest::Database do
       end
 
       it_should_behave_like "simply replicated"
+    end
+    
+    describe "with a specific doc" do
+      before(:each) do
+        @other_db.recreate!
+        @db.save_doc({'_id' => 'unreplicated_doc', 'some-value' => 'foo'})
+        @db.replicate_to @other_db, false, false, ['test_doc']
+      end
+      
+      # should contain only replicated doc and not unreplicated doc
+      it_should_behave_like "simply replicated"
+      it "does not contain unreplicated doc" do 
+        lambda { @other_db.get('unreplicated_doc') }.should raise_error(RestClient::ResourceNotFound)
+      end
     end
 
     describe "implicitly creating target" do
@@ -811,39 +864,38 @@ describe CouchRest::Database do
     end
   end
 
-  describe "creating a database" do
+  describe "#create!" do
     before(:each) do
       @db = @cr.database('couchrest-test-db_to_create')
       @db.delete! if @cr.databases.include?('couchrest-test-db_to_create')
     end
-    
+
     it "should just work fine" do
       @cr.databases.should_not include('couchrest-test-db_to_create')
       @db.create!
       @cr.databases.should include('couchrest-test-db_to_create')
     end
   end
-  
-  describe "recreating a database" do
+
+  describe "#recreate!" do
     before(:each) do
       @db = @cr.database('couchrest-test-db_to_create')
       @db2 = @cr.database('couchrest-test-db_to_recreate')
       @cr.databases.include?(@db.name) ? nil : @db.create!
       @cr.databases.include?(@db2.name) ? @db2.delete! : nil
     end
-    
+
     it "should drop and recreate a database" do
        @cr.databases.should include(@db.name)
        @db.recreate!
        @cr.databases.should include(@db.name)
     end
-    
+
     it "should recreate a db even tho it doesn't exist" do
       @cr.databases.should_not include(@db2.name)
       @db2.recreate!
       @cr.databases.should include(@db2.name)
     end
-    
   end
 
   describe "searching a database" do

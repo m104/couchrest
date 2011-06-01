@@ -13,7 +13,7 @@
 #    limitations under the License.
 
 require 'rest_client'
-require 'json'
+require 'multi_json'
 
 # Not sure why this is required, so removed until a reason is found!
 $:.unshift File.dirname(__FILE__) unless
@@ -23,11 +23,10 @@ $:.unshift File.dirname(__FILE__) unless
 require 'couchrest/monkeypatches'
 require 'couchrest/rest_api'
 require 'couchrest/support/inheritable_attributes'
+require 'couchrest/version'
 
 # = CouchDB, close to the metal
 module CouchRest
-  VERSION    = '1.0.1'
-  
   autoload :Server,       'couchrest/server'
   autoload :Database,     'couchrest/database'
   autoload :Response,     'couchrest/response'
@@ -111,7 +110,7 @@ module CouchRest
     def paramify_url url, params = {}
       if params && !params.empty?
         query = params.collect do |k,v|
-          v = v.to_json if %w{key startkey endkey}.include?(k.to_s)
+          v = MultiJson.encode(v) if %w{key startkey endkey}.include?(k.to_s)
           "#{k}=#{CGI.escape(v.to_s)}"
         end.join("&")
         url = "#{url}?#{query}"

@@ -9,6 +9,36 @@ describe CouchRest::Document do
     @db    = @couch.database!(TESTDB)
   end
 
+  describe "#new" do
+    it "should not be a Hash" do
+      @doc = CouchRest::Document.new
+      @doc.class.should eql(CouchRest::Document)
+      @doc.is_a?(Hash).should be_false
+    end
+
+    it "should be possible to initialize a new Document with attributes" do
+      @doc = CouchRest::Document.new('foo' => 'bar', :test => 'foo')
+      @doc['foo'].should eql('bar')
+      @doc['test'].should eql('foo')
+    end
+
+    it "should accept new with _id" do
+      @doc = CouchRest::Document.new('_id' => 'sample', 'foo' => 'bar')
+      @doc['_id'].should eql('sample')
+      @doc['foo'].should eql('bar')
+    end
+  end
+
+  describe "hash methods" do
+    it "should respond to forwarded hash methods" do
+      @doc = CouchRest::Document.new(:foo => 'bar')
+      [:to_a, :==, :eql?, :keys, :values, :each, :reject, :reject!, :empty?,
+        :clear, :merge, :merge!, :encode_json, :as_json, :to_json].each do |call|
+        @doc.should respond_to(call)
+      end
+    end
+  end
+
   describe "[]=" do
     before(:each) do
       @doc = CouchRest::Document.new
@@ -26,6 +56,57 @@ describe CouchRest::Document do
     it "should read as a string" do
       @doc[:enamel] = "Strong"
       @doc[:enamel].should == "Strong"
+    end
+  end
+
+  describe "#has_key?" do
+    before :each do
+      @doc = CouchRest::Document.new
+    end
+    it "should confirm existance of key" do
+      @doc[:test] = 'example'
+      @doc.has_key?('test').should be_true
+      @doc.has_key?(:test).should be_true
+    end
+    it "should deny existance of key" do
+      @doc.has_key?(:bardom).should be_false
+      @doc.has_key?('bardom').should be_false
+    end
+  end
+
+  describe "#dup" do
+    it "should also clone the attributes" do
+      @doc = CouchRest::Document.new('foo' => 'bar')
+      @doc2 = @doc.dup
+      @doc2.delete('foo')
+      @doc2['foo'].should be_nil
+      @doc['foo'].should eql('bar')
+    end
+  end
+
+  describe "#clone" do
+    it "should also clone the attributes" do
+      @doc = CouchRest::Document.new('foo' => 'bar')
+      @doc2 = @doc.clone
+      @doc2.delete('foo')
+      @doc2['foo'].should be_nil
+      @doc['foo'].should eql('bar')
+    end
+  end
+
+
+  describe "#inspect" do
+    it "should provide a string of keys and values of the Response" do
+      @doc = CouchRest::Document.new('foo' => 'bar')
+      @doc.inspect.should eql("#<CouchRest::Document foo: \"bar\">")
+    end
+  end
+
+  describe "responding to Hash methods" do
+    it "should delegate requests" do
+      @doc = CouchRest::Document.new('foo' => 'bar')
+      @doc.keys.should eql(['foo'])
+      @doc.values.should eql(['bar'])
     end
   end
 
@@ -220,7 +301,7 @@ describe "dealing with attachments" do
     response = @db.save_doc({'key' => 'value'})
     @doc = @db.get(response['id'])
   end
-  
+
   def append_attachment(name='test.html', attach=@attach)
     @doc['_attachments'] ||= {}
     @doc['_attachments'][name] = {
@@ -230,50 +311,50 @@ describe "dealing with attachments" do
     @doc.save
     @rev = @doc['_rev']
   end
-  
+
   describe "PUTing an attachment directly to the doc" do
     before do
       @doc.put_attachment('test.html', @attach)
     end
-    
+
     it "is there" do
       @db.fetch_attachment(@doc, 'test.html').should == @attach
     end
-    
+
     it "updates the revision" do
-      @doc['_rev'].should_not == @rev
+      @doc[:_rev].should_not == @rev
     end
-    
+
     it "updates attachments" do
       @attach2 = "<html><head><title>My Doc</title></head><body><p>Is Different.</p></body></html>"
       @doc.put_attachment('test.html', @attach2)
       @db.fetch_attachment(@doc, 'test.html').should == @attach2
     end
   end
-  
+
   describe "fetching an attachment from a doc directly" do
     before do
       append_attachment
     end
-    
+
     it "pulls the attachment" do
       @doc.fetch_attachment('test.html').should == @attach
     end
   end
-  
+
   describe "deleting an attachment from a doc directly" do
     before do
       append_attachment
       @doc.delete_attachment('test.html')
     end
-    
+
     it "removes it" do
       lambda { @db.fetch_attachment(@doc, 'test.html').should }.should raise_error(RestClient::ResourceNotFound)
     end
-    
+
     it "updates the revision" do
-      @doc['_rev'].should_not == @rev
+      @doc[:_rev].should_not == @rev
     end
   end
-  
+
 end

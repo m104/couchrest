@@ -1,11 +1,12 @@
-module CouchRest  
+module CouchRest
   class Design < Document
+
     def view_by *keys
       opts = keys.pop if keys.last.is_a?(Hash)
       opts ||= {}
       self['views'] ||= {}
       method_name = "by_#{keys.join('_and_')}"
-      
+
       if opts[:map]
         view = {}
         view['map'] = opts.delete(:map)
@@ -31,7 +32,7 @@ JAVASCRIPT
       self['views'][method_name]['couchrest-defaults'] = opts unless opts.empty?
       method_name
     end
-    
+
     # Dispatches to any named view.
     # (using the database where this design doc was saved)
     def view view_name, query={}, &block

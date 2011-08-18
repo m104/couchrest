@@ -27,13 +27,27 @@ describe CouchRest::Document do
       @doc['_id'].should eql('sample')
       @doc['foo'].should eql('bar')
     end
+
+    context "replacing initalize" do
+      it "should not raise error" do
+        klass = Class.new(CouchRest::Document)
+        klass.class_eval do
+          def initialize; end # don't do anything, just overwrite
+        end
+        expect {
+          @doc = klass.new
+          @doc['test'] = 'sample'
+        }.to_not raise_error
+      end
+    end
   end
+
 
   describe "hash methods" do
     it "should respond to forwarded hash methods" do
       @doc = CouchRest::Document.new(:foo => 'bar')
       [:to_a, :==, :eql?, :keys, :values, :each, :reject, :reject!, :empty?,
-        :clear, :merge, :merge!, :encode_json, :as_json, :to_json].each do |call|
+        :clear, :merge, :merge!, :encode_json, :as_json, :to_json, :frozen?].each do |call|
         @doc.should respond_to(call)
       end
     end
@@ -94,6 +108,32 @@ describe CouchRest::Document do
     end
   end
 
+  describe "#freeze" do
+    it "should freeze the attributes, but not actual model" do
+      klass = Class.new(CouchRest::Document)
+      klass.class_eval { attr_accessor :test_attr }
+      @doc = klass.new('foo' => 'bar')
+      @doc.freeze
+      lambda { @doc['foo'] = 'bar2' }.should raise_error(/frozen/)
+      lambda { @doc.test_attr = "bar3" }.should_not raise_error
+    end
+  end
+
+  describe "#as_couch_json" do
+    it "should provide a hash of data from normal document" do
+      @doc = CouchRest::Document.new('foo' => 'bar')
+      h = @doc.as_couch_json
+      h.should be_a(Hash)
+      h['foo'].should eql('bar')
+    end
+
+    it "should handle nested documents" do
+      @doc = CouchRest::Document.new('foo' => 'bar', 'doc' => CouchRest::Document.new('foo2' => 'bar2'))
+      h = @doc.as_couch_json
+      h['doc'].should be_a(Hash)
+      h['doc']['foo2'].should eql('bar2')
+    end
+  end
 
   describe "#inspect" do
     it "should provide a string of keys and values of the Response" do
